@@ -22,12 +22,11 @@
 //----------------------------------------------------------------------
 
 void
-SimpleThread(_int which)
-{
+SimpleThread(_int which) {
     int num;
-    
+
     for (num = 0; num < 5; num++) {
-	printf("*** thread %d looped %d times\n", (int) which, num);
+        printf("*** thread %d looped %d times\n", (int) which, num);
         currentThread->Yield();
     }
 }
@@ -39,8 +38,7 @@ SimpleThread(_int which)
 //----------------------------------------------------------------------
 
 void
-ThreadTest()
-{
+ThreadTest() {
     DEBUG('t', "Entering SimpleTest");
 
     Thread *t0 = new Thread("forked thread", 0);
