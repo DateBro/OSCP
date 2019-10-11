@@ -12,9 +12,13 @@
 // of liability and disclaimer of warranty provisions.
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "copyright.h"
 #include "system.h"
 
+#include "thread.h"
 #include "synch.h"
 #include "ring.h"
 
