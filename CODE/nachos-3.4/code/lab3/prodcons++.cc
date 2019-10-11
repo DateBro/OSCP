@@ -184,7 +184,7 @@ ProdCons() {
         //     integer i as the argument of function "Consumer"
         //  ...
         Thread* thread = new Thread(cons_names[i]);
-        thread->fork(Consumer, i);
+        thread->Fork(Consumer, i);
     };
 }
 
