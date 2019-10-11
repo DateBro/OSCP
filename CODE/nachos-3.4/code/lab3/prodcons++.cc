@@ -151,9 +151,9 @@ ProdCons() {
 
     // Put the code to construct all the semaphores here.
     // ....
-    nempty = new Semaphore('nempty', 0);
-    nfull = new Semaphore('nfull', BUFF_SIZE);
-    mutex = new Semaphore('mutex', 1);
+    nempty = new Semaphore("nempty", 0);
+    nfull = new Semaphore("nfull", BUFF_SIZE);
+    mutex = new Semaphore("mutex", 1);
 
     // Put the code to construct a ring buffer object with size 
     //BUFF_SIZE here.
