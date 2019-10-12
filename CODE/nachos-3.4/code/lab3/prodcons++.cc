@@ -78,6 +78,7 @@ Producer(_int which) {
         nfull->P();
         mutex->P();
         ring->Put(message);
+        // Put some information to the console for debugging more easily
         printf("thread %d, put %d to ring. \n", which, num);
 
         // Put the code for synchronization after  ring->Put(message) here.
@@ -132,7 +133,6 @@ Consumer(_int which) {
         sprintf(str, "producer id --> %d; Message number --> %d;\n",
                 message->thread_id,
                 message->value);
-        printf("%s", str);
         // write this string into the output file of this consumer.
         // note that this is another UNIX system call.
         if (write(fd, str, strlen(str)) == -1) {
