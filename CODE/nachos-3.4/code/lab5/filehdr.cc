@@ -142,7 +142,7 @@ FileHeader::Print() {
     delete[] data;
 }
 
-int Extend(int newFileSize) {
+int FileHeader::Extend(int newFileSize) {
     // nothing needs to change
     if (newFileSize <= numBytes) {
         return 0;
