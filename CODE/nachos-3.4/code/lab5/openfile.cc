@@ -26,6 +26,7 @@
 
 OpenFile::OpenFile(int sector) {
     hdr = new FileHeader;
+    fileSector = sector;
     hdr->FetchFrom(sector);
     seekPosition = 0;
 }
@@ -186,4 +187,8 @@ OpenFile::WriteAt(char *from, int numBytes, int position) {
 int
 OpenFile::Length() {
     return hdr->FileLength();
+}
+
+void OpenFile::WriteBack() {
+    hdr->WriteBack(fileSector);
 }

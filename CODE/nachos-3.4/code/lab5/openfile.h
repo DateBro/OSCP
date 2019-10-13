@@ -82,6 +82,8 @@ public:
     // Read/write bytes from the file,
     // bypassing the implicit position.
     int WriteAt(char *from, int numBytes, int position);
+    // add WriteBack() function corresponding to the tutorial
+    void WriteBack();
 
     int Length();            // Return the number of bytes in the
     // file (this interface is simpler
@@ -91,6 +93,8 @@ public:
 private:
     FileHeader *hdr;            // Header for this file
     int seekPosition;            // Current position within the file
+    // fileSector to record the sector when openFile
+    int fileSector;
 };
 
 #endif // FILESYS
