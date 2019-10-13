@@ -146,7 +146,7 @@ OpenFile::WriteAt(char *from, int numBytes, int position) {
         return 0;                // check request
     if ((position + numBytes) > fileLength) {
 //        numBytes = fileLength - position;
-        newFileSize = position + numBytes;
+        int newFileSize = position + numBytes;
         hdr->Extend(newFileSize);
     }
     DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n",
