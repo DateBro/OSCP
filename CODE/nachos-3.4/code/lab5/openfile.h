@@ -52,10 +52,12 @@ return numWritten;
 }
 
 int Length() { Lseek(file, 0, 2); return Tell(file); }
+int WriteBack();
 
 private:
 int file;
 int currentOffset;
+int fileSector;
 };
 
 #else // FILESYS
@@ -82,6 +84,7 @@ public:
     // Read/write bytes from the file,
     // bypassing the implicit position.
     int WriteAt(char *from, int numBytes, int position);
+
     // add WriteBack() function corresponding to the tutorial
     void WriteBack();
 
