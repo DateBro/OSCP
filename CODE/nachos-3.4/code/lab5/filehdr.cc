@@ -169,7 +169,7 @@ int FileHeader::Extend(int newFileSize) {
     for (int i = numSectors; i < newNumSectors; i++) {
         dataSectors[i] = freeMap->Find();
     }
-    freeMap->WriteBack(freeMapFile);
+    freeMap->WriteBack(bitmapFile);
     numBytes = newFileSize;
     numSectors = newNumSectors;
     return 2;
