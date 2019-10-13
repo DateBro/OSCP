@@ -61,7 +61,7 @@ extern void ThreadTest(void), Copy(char *unixFile, char *nachosFile);
 
 extern void Append(char *unixFile, char *nachosFile, int half);
 
-extern void NAppend(char *nachosFile, char *nachosFile);
+extern void NAppend(char *from, char *to);
 
 extern void Print(char *file), PerformanceTest(void);
 
