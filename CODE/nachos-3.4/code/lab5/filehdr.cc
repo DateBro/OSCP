@@ -158,8 +158,8 @@ int FileHeader::Extend(int newFileSize) {
     // change fileSize and numSectors
     int appendSectorsNum = newNumSectors - numSectors;
     // bitmap is located in 0 sector
-    OpenFile* bitmapFile = new OpenFile(0);
-    BitMap* freeMap = new BitMap(NumSectors);
+    OpenFile *bitmapFile = new OpenFile(0);
+    BitMap *freeMap = new BitMap(NumSectors);
     freeMap->FetchFrom(bitmapFile);
     // similar to Allocate() function
     // if no more space to allocate new sectors, just return -1

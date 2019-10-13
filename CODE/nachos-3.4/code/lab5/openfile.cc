@@ -142,8 +142,9 @@ OpenFile::WriteAt(char *from, int numBytes, int position) {
     bool firstAligned, lastAligned;
     char *buf;
 
-    if ((numBytes <= 0) || (position >= fileLength))
-        return 0;                // check request
+    if (numBytes <= 0) {
+        return 0;
+    }                // check request
     if ((position + numBytes) > fileLength) {
 //        numBytes = fileLength - position;
         int newFileSize = position + numBytes;
