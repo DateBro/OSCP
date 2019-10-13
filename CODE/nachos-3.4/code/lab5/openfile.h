@@ -85,18 +85,17 @@ public:
     // bypassing the implicit position.
     int WriteAt(char *from, int numBytes, int position);
 
-    // add WriteBack() function corresponding to the tutorial
-    void WriteBack();
-
     int Length();            // Return the number of bytes in the
     // file (this interface is simpler
     // than the UNIX idiom -- lseek to
     // end of file, tell, lseek back
 
-private:
-    FileHeader *hdr;            // Header for this file
-    int seekPosition;            // Current position within the file
-    // fileSector to record the sector when openFile
+    // add WriteBack() function corresponding to the tutorial
+    int WriteBack();
+
+  private:
+    FileHeader *hdr;			// Header for this file
+    int seekPosition;			// Current position within the file
     int fileSector;
 };
 

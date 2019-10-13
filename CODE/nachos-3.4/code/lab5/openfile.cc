@@ -189,6 +189,7 @@ OpenFile::Length() {
     return hdr->FileLength();
 }
 
-void OpenFile::WriteBack() {
+// modified!!
+int OpenFile::WriteBack() {
     hdr->WriteBack(fileSector);
 }
