@@ -116,14 +116,13 @@ FileHeader::FetchFrom(int sector) {
 
 void
 FileHeader::WriteBack(int sector) {
-	// print the sector to write back for debug easily
-	printf("Writing back sector %d. \n", sector);
-    synchDisk->WriteSector(sector, (char *) this);
     // write back to the indirect fileheader
-    if (dataSectors[NumDirect-1] != -1) {
-        indirect = new FileHeader;
+    if (indirect != NULL) {
+        // print the sector to write back for debug easily
+        printf("writing back indirect sector %d. \n", dataSectors[NumDirect-1]);
         indirect->WriteBack(dataSectors[NumDirect-1]);
     }
+    synchDisk->WriteSector(sector, (char *) this);
 }
 
 //----------------------------------------------------------------------
