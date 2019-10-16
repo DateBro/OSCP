@@ -39,15 +39,14 @@
 //----------------------------------------------------------------------
 
 bool
-FileHeader::Allocate(BitMap *freeMap, int fileSize)
-{ 
+FileHeader::Allocate(BitMap *freeMap, int fileSize) {
     numBytes = fileSize;
-    numSectors  = divRoundUp(fileSize, SectorSize);
+    numSectors = divRoundUp(fileSize, SectorSize);
     if (freeMap->NumClear() < numSectors)
-	return FALSE;		// not enough space
+        return FALSE;        // not enough space
 
     for (int i = 0; i < numSectors; i++)
-	dataSectors[i] = freeMap->Find();
+        dataSectors[i] = freeMap->Find();
     return TRUE;
 }
 
@@ -58,12 +57,11 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
 //	"freeMap" is the bit map of free disk sectors
 //----------------------------------------------------------------------
 
-void 
-FileHeader::Deallocate(BitMap *freeMap)
-{
+void
+FileHeader::Deallocate(BitMap *freeMap) {
     for (int i = 0; i < numSectors; i++) {
-	ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
-	freeMap->Clear((int) dataSectors[i]);
+        ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
+        freeMap->Clear((int) dataSectors[i]);
     }
 }
 
@@ -75,9 +73,8 @@ FileHeader::Deallocate(BitMap *freeMap)
 //----------------------------------------------------------------------
 
 void
-FileHeader::FetchFrom(int sector)
-{
-    synchDisk->ReadSector(sector, (char *)this);
+FileHeader::FetchFrom(int sector) {
+    synchDisk->ReadSector(sector, (char *) this);
 }
 
 //----------------------------------------------------------------------
@@ -88,9 +85,8 @@ FileHeader::FetchFrom(int sector)
 //----------------------------------------------------------------------
 
 void
-FileHeader::WriteBack(int sector)
-{
-    synchDisk->WriteSector(sector, (char *)this); 
+FileHeader::WriteBack(int sector) {
+    synchDisk->WriteSector(sector, (char *) this);
 }
 
 //----------------------------------------------------------------------
@@ -104,9 +100,8 @@ FileHeader::WriteBack(int sector)
 //----------------------------------------------------------------------
 
 int
-FileHeader::ByteToSector(int offset)
-{
-    return(dataSectors[offset / SectorSize]);
+FileHeader::ByteToSector(int offset) {
+    return (dataSectors[offset / SectorSize]);
 }
 
 //----------------------------------------------------------------------
@@ -115,8 +110,7 @@ FileHeader::ByteToSector(int offset)
 //----------------------------------------------------------------------
 
 int
-FileHeader::FileLength()
-{
+FileHeader::FileLength() {
     return numBytes;
 }
 
@@ -127,24 +121,56 @@ FileHeader::FileLength()
 //----------------------------------------------------------------------
 
 void
-FileHeader::Print()
-{
+FileHeader::Print() {
     int i, j, k;
     char *data = new char[SectorSize];
 
     printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
     for (i = 0; i < numSectors; i++)
-	printf("%d ", dataSectors[i]);
+        printf("%d ", dataSectors[i]);
     printf("\nFile contents:\n");
     for (i = k = 0; i < numSectors; i++) {
-	synchDisk->ReadSector(dataSectors[i], data);
+        synchDisk->ReadSector(dataSectors[i], data);
         for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
-	    if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
-		printf("%c", data[j]);
+            if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
+                printf("%c", data[j]);
             else
-		printf("\\%x", (unsigned char)data[j]);
-	}
-        printf("\n"); 
+                printf("\\%x", (unsigned char) data[j]);
+        }
+        printf("\n");
     }
-    delete [] data;
+    delete[] data;
+}
+
+int FileHeader::Extend(int newFileSize) {
+    // nothing needs to change
+    if (newFileSize <= numBytes) {
+        return 0;
+    }
+
+    // change fileSize but don't change numSectors
+    int newNumSectors = divRoundUp(newFileSize, SectorSize);
+    if (newNumSectors == numSectors) {
+        numBytes = newFileSize;
+        return 1;
+    }
+
+    // change fileSize and numSectors
+    int appendSectorsNum = newNumSectors - numSectors;
+    // bitmap is located in 0 sector
+    OpenFile *bitmapFile = new OpenFile(0);
+    BitMap *freeMap = new BitMap(NumSectors);
+    freeMap->FetchFrom(bitmapFile);
+    // similar to Allocate() function
+    // if no more space to allocate new sectors, just return -1
+    if (newNumSectors > NumDirect || freeMap->NumClear() < appendSectorsNum) {
+        return -1;
+    }
+    for (int i = numSectors; i < newNumSectors; i++) {
+        dataSectors[i] = freeMap->Find();
+    }
+    freeMap->WriteBack(bitmapFile);
+    numBytes = newFileSize;
+    numSectors = newNumSectors;
+    return 2;
 }
