@@ -19,7 +19,7 @@ CCFILES +=bitmap.cc\
 ifdef MAKEFILE_USERPROG_LOCAL
 DEFINES := $(DEFINES:FILESYS_STUB=FILESYS)
 else
-INCPATH += -I../userprog -I../lab5
+INCPATH += -I../userprog -I../lab4
 DEFINES += -DFILESYS_NEEDED -DFILESYS
 endif
 
