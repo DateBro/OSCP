@@ -42,11 +42,31 @@ bool
 FileHeader::Allocate(BitMap *freeMap, int fileSize) {
     numBytes = fileSize;
     numSectors = divRoundUp(fileSize, SectorSize);
-    if (freeMap->NumClear() < numSectors)
-        return FALSE;        // not enough space
 
-    for (int i = 0; i < numSectors; i++)
+    int directSectors = numSectors;
+    if (numSectors > NumDirect - 1) directSectors = NumDirect - 1;
+
+    if (freeMap->NumClear() < directSectors)
+        return FALSE;        // not enough space
+    for (int i = 0; i < directSectors; i++)
         dataSectors[i] = freeMap->Find();
+
+    if (numSectors > NumDirect - 1) {
+        int indirectSector = freeMap->Find();
+        if (indirectSector == -1) {
+            return FALSE;
+        } else {
+            indirect = new FileHeader;
+            int remainFileSize = fileSize - (NumDirect - 1) * SectorSize;
+            if (!indirect->Allocate(freeMap, remainFileSize))
+                return FALSE;
+            dataSectors[NumDirect - 1] = indirectSector;
+        }
+    } else {
+        indirect = NULL;
+        dataSectors[NumDirect - 1] = -1;
+    }
+
     return TRUE;
 }
 
@@ -59,7 +79,10 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize) {
 
 void
 FileHeader::Deallocate(BitMap *freeMap) {
-    for (int i = 0; i < numSectors; i++) {
+    if (indirect != NULL) indirect->Deallocate(freeMap);
+    int directSectors = numSectors;
+    if (numSectors > NumDirect - 1) directSectors = NumDirect - 1;
+    for (int i = 0; i < directSectors; i++) {
         ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
         freeMap->Clear((int) dataSectors[i]);
     }
@@ -74,7 +97,14 @@ FileHeader::Deallocate(BitMap *freeMap) {
 
 void
 FileHeader::FetchFrom(int sector) {
+	// print the sector to fetch from for debug easily
+	printf("Fetch from sector %d.\n", sector);
     synchDisk->ReadSector(sector, (char *) this);
+    // read from indirect fileheader
+    if (dataSectors[NumDirect-1] != -1) {
+        indirect = new FileHeader;
+        indirect->FetchFrom(dataSectors[NumDirect-1]);
+    }
 }
 
 //----------------------------------------------------------------------
@@ -86,7 +116,14 @@ FileHeader::FetchFrom(int sector) {
 
 void
 FileHeader::WriteBack(int sector) {
+	// print the sector to write back for debug easily
+	printf("Writing back sector %d. \n", sector);
     synchDisk->WriteSector(sector, (char *) this);
+    // write back to the indirect fileheader
+    if (dataSectors[NumDirect-1] != -1) {
+        indirect = new FileHeader;
+        indirect->WriteBack(dataSectors[NumDirect-1]);
+    }
 }
 
 //----------------------------------------------------------------------
@@ -101,7 +138,11 @@ FileHeader::WriteBack(int sector) {
 
 int
 FileHeader::ByteToSector(int offset) {
-    return (dataSectors[offset / SectorSize]);
+    int directSector = offset / SectorSize;
+    if (directSector >= NumDirect-1) return indirect->ByteToSector(offset - (NumDirect-1)*SectorSize);
+	// print this for debuging easily
+	printf("ByteToSector is %d, \n", dataSectors[offset / SectorSize]);
+    return(dataSectors[directSector]);
 }
 
 //----------------------------------------------------------------------
@@ -122,32 +163,39 @@ FileHeader::FileLength() {
 
 void
 FileHeader::Print() {
+    int directSector, directBytes;
+    if (numSectors > NumDirect-1) {
+        directSector = NumDirect-1;
+        directBytes = directSector * SectorSize;
+    } else {
+        directSector = numSectors;
+        directBytes = numBytes;
+    }
     int i, j, k;
     char *data = new char[SectorSize];
 
     printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
-    for (i = 0; i < numSectors; i++)
+    for (i = 0; i < directSector; i++)
         printf("%d ", dataSectors[i]);
     printf("\nFile contents:\n");
-    for (i = k = 0; i < numSectors; i++) {
+    for (i = k = 0; i < directSector; i++) {
         synchDisk->ReadSector(dataSectors[i], data);
-        for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
+        for (j = 0; (j < SectorSize) && (k < directBytes); j++, k++) {
             if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
                 printf("%c", data[j]);
             else
-                printf("\\%x", (unsigned char) data[j]);
+                printf("\\%x", (unsigned char)data[j]);
         }
         printf("\n");
     }
-    delete[] data;
+    delete [] data;
+    if (indirect != NULL) indirect->Print();
 }
 
 int FileHeader::Extend(int newFileSize) {
     // nothing needs to change
-    if (newFileSize <= numBytes) {
+    if (newFileSize <= numBytes)
         return 0;
-    }
-
     // change fileSize but don't change numSectors
     int newNumSectors = divRoundUp(newFileSize, SectorSize);
     if (newNumSectors == numSectors) {
@@ -163,14 +211,33 @@ int FileHeader::Extend(int newFileSize) {
     freeMap->FetchFrom(bitmapFile);
     // similar to Allocate() function
     // if no more space to allocate new sectors, just return -1
-    if (newNumSectors > NumDirect || freeMap->NumClear() < appendSectorsNum) {
+    if (freeMap->NumClear() < appendSectorsNum)
         return -1;
+    // if indirect is not null, we should just extend indirect fileheader
+    if (indirect != NULL) {
+        indirect->Extend(newFileSize);
+    } else {
+        int directSectors = newNumSectors;
+        if(newNumSectors > NumDirect - 1) directSectors = NumDirect - 1;
+        for (int i = numSectors; i < directSectors; i++)
+            dataSectors[i] = freeMap->Find();
+
+        if (newNumSectors > NumDirect - 1) {
+            int indirectSector = freeMap->Find();
+            if (indirectSector == -1) {
+                return -1;
+            } else {
+                indirect = new FileHeader;
+                int remainFileSize = newFileSize - directSectors * SectorSize;
+                if (!indirect->Allocate(freeMap, 0))
+                    return -1;
+                dataSectors[NumDirect - 1] = indirectSector;
+                indirect->Extend(remainFileSize);
+            }
+        } else {
+            indirect = NULL;
+            dataSectors[NumDirect - 1] = -1;
+        }
     }
-    for (int i = numSectors; i < newNumSectors; i++) {
-        dataSectors[i] = freeMap->Find();
-    }
-    freeMap->WriteBack(bitmapFile);
-    numBytes = newFileSize;
-    numSectors = newNumSectors;
     return 2;
 }
