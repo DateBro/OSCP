@@ -215,7 +215,8 @@ int FileHeader::Extend(int newFileSize) {
         return -1;
     // if indirect is not null, we should just extend indirect fileheader
     if (indirect != NULL) {
-        indirect->Extend(newFileSize);
+        int remainFileSize = newFileSize - (NumDirect - 1) * SectorSize;
+        indirect->Extend(remainFileSize);
     } else {
         int directSectors = newNumSectors;
         if(newNumSectors > NumDirect - 1) directSectors = NumDirect - 1;
@@ -239,5 +240,7 @@ int FileHeader::Extend(int newFileSize) {
             dataSectors[NumDirect - 1] = -1;
         }
     }
+    numBytes = newFileSize;
+    numSectors = newNumSectors;
     return 2;
 }
