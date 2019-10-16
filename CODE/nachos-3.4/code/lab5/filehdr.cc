@@ -140,8 +140,8 @@ int
 FileHeader::ByteToSector(int offset) {
     int directSector = offset / SectorSize;
     if (directSector >= NumDirect-1) return indirect->ByteToSector(offset - (NumDirect-1)*SectorSize);
-	// print this for debuging easily
-	printf("ByteToSector is %d, \n", dataSectors[offset / SectorSize]);
+	// print this for debuging easily, but there are too much these infos, so I note it
+//	printf("ByteToSector is %d, \n", dataSectors[offset / SectorSize]);
     return(dataSectors[directSector]);
 }
 
@@ -214,7 +214,7 @@ int FileHeader::Extend(int newFileSize) {
     if (freeMap->NumClear() < appendSectorsNum)
         return -1;
     // if indirect is not null, we should just extend indirect fileheader
-    if (indirect != NULL) {
+    if (dataSectors[NumDirect - 1] == -1 && indirect != NULL) {
         int remainFileSize = newFileSize - (NumDirect - 1) * SectorSize;
         indirect->Extend(remainFileSize);
     } else {
