@@ -189,7 +189,7 @@ FileHeader::Print() {
     }
     delete [] data;
     if (indirect != NULL) {
-        printf("Now print indirect: %d.\n", indirect->numSectors);
+        printf("Now print indirect.\n");
         indirect->Print();
     }
 }
@@ -216,7 +216,7 @@ int FileHeader::Extend(int newFileSize) {
     if (freeMap->NumClear() < appendSectorsNum)
         return -1;
     // if indirect is not null, we should just extend indirect fileheader
-    if (dataSectors[NumDirect - 1] != -1 && indirect != NULL) {
+    if (dataSectors[NumDirect - 1] != -1) {
         int remainFileSize = newFileSize - (NumDirect - 1) * SectorSize;
         indirect->FetchFrom(dataSectors[NumDirect - 1]);
         indirect->Extend(remainFileSize);
@@ -244,5 +244,6 @@ int FileHeader::Extend(int newFileSize) {
     }
     numBytes = newFileSize;
     numSectors = newNumSectors;
+    freeMap->WriteBack(bitmapFile);
     return 2;
 }
