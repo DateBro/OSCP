@@ -218,24 +218,28 @@ int FileHeader::Extend(int newFileSize) {
     // if indirect is not null, we should just extend indirect fileheader
     if (dataSectors[NumDirect - 1] != -1) {
         int remainFileSize = newFileSize - (NumDirect - 1) * SectorSize;
-        indirect->FetchFrom(dataSectors[NumDirect - 1]);
+        int indirectSector = dataSectors[NumDirect - 1];
+        indirect->FetchFrom(indirectSector);
         indirect->Extend(remainFileSize);
+        indirect->WriteBack(indirectSector);
     } else {
         int directSectors = newNumSectors;
         if(newNumSectors > NumDirect - 1) directSectors = NumDirect - 1;
         for (int i = numSectors; i < directSectors; i++)
             dataSectors[i] = freeMap->Find();
+
         if (newNumSectors > NumDirect - 1) {
+            printf("newNumSectors > NumDirect - 1.\n");
             int indirectSector = freeMap->Find();
             if (indirectSector == -1) {
                 return -1;
             } else {
                 indirect = new FileHeader;
+                dataSectors[NumDirect - 1] = indirectSector;
                 int remainFileSize = newFileSize - directSectors * SectorSize;
                 if (!indirect->Allocate(freeMap, remainFileSize))
                     return -1;
-                dataSectors[NumDirect - 1] = indirectSector;
-                indirect->Extend(remainFileSize);
+//                indirect->Extend(remainFileSize);
             }
         } else {
             indirect = NULL;
