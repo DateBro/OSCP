@@ -52,6 +52,7 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize) {
         dataSectors[i] = freeMap->Find();
 
     if (numSectors > NumDirect - 1) {
+        printf("Now allocate numSectors > NumDirect - 1\n");
         int indirectSector = freeMap->Find();
         if (indirectSector == -1) {
             return FALSE;
@@ -63,6 +64,7 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize) {
             dataSectors[NumDirect - 1] = indirectSector;
         }
     } else {
+        printf("Now allocate numSectors < NumDirect - 1\n");
         indirect = NULL;
         dataSectors[NumDirect - 1] = -1;
     }
@@ -122,6 +124,7 @@ FileHeader::WriteBack(int sector) {
         printf("writing back indirect sector %d. \n", dataSectors[NumDirect-1]);
         indirect->WriteBack(dataSectors[NumDirect-1]);
     }
+    printf("writing back direct sector %d. \n", sector);
     synchDisk->WriteSector(sector, (char *) this);
 }
 
@@ -248,6 +251,7 @@ int FileHeader::Extend(int newFileSize) {
     }
     numBytes = newFileSize;
     numSectors = newNumSectors;
+    printf("Next, write back freemap.\n");
     freeMap->WriteBack(bitmapFile);
     return 2;
 }
