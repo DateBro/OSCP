@@ -188,7 +188,10 @@ FileHeader::Print() {
         printf("\n");
     }
     delete [] data;
-    if (indirect != NULL) indirect->Print();
+    if (indirect != NULL) {
+        printf("Now print indirect: %d.\n", indirect->numSectors);
+        indirect->Print();
+    }
 }
 
 int FileHeader::Extend(int newFileSize) {
@@ -213,15 +216,15 @@ int FileHeader::Extend(int newFileSize) {
     if (freeMap->NumClear() < appendSectorsNum)
         return -1;
     // if indirect is not null, we should just extend indirect fileheader
-    if (dataSectors[NumDirect - 1] == -1 && indirect != NULL) {
+    if (dataSectors[NumDirect - 1] != -1 && indirect != NULL) {
         int remainFileSize = newFileSize - (NumDirect - 1) * SectorSize;
+        indirect->FetchFrom(dataSectors[NumDirect - 1]);
         indirect->Extend(remainFileSize);
     } else {
         int directSectors = newNumSectors;
         if(newNumSectors > NumDirect - 1) directSectors = NumDirect - 1;
         for (int i = numSectors; i < directSectors; i++)
             dataSectors[i] = freeMap->Find();
-
         if (newNumSectors > NumDirect - 1) {
             int indirectSector = freeMap->Find();
             if (indirectSector == -1) {
@@ -229,7 +232,7 @@ int FileHeader::Extend(int newFileSize) {
             } else {
                 indirect = new FileHeader;
                 int remainFileSize = newFileSize - directSectors * SectorSize;
-                if (!indirect->Allocate(freeMap, 0))
+                if (!indirect->Allocate(freeMap, remainFileSize))
                     return -1;
                 dataSectors[NumDirect - 1] = indirectSector;
                 indirect->Extend(remainFileSize);
