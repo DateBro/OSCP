@@ -214,25 +214,24 @@ int FileHeader::Extend(int newFileSize) {
     OpenFile *bitmapFile = new OpenFile(0);
     BitMap *freeMap = new BitMap(NumSectors);
     freeMap->FetchFrom(bitmapFile);
-    // similar to Allocate() function
     // if no more space to allocate new sectors, just return -1
     if (freeMap->NumClear() < appendSectorsNum)
         return -1;
     // if indirect is not null, we should just extend indirect fileheader
-    if (dataSectors[NumDirect - 1] != -1) {
+    if (indirect != NULL) {
         int remainFileSize = newFileSize - (NumDirect - 1) * SectorSize;
         int indirectSector = dataSectors[NumDirect - 1];
         indirect->FetchFrom(indirectSector);
         indirect->Extend(remainFileSize);
         indirect->WriteBack(indirectSector);
     } else {
+        // similar to Allocate() function
         int directSectors = newNumSectors;
-        if(newNumSectors > NumDirect - 1) directSectors = NumDirect - 1;
+        if (newNumSectors > NumDirect - 1) directSectors = NumDirect - 1;
         for (int i = numSectors; i < directSectors; i++)
             dataSectors[i] = freeMap->Find();
 
         if (newNumSectors > NumDirect - 1) {
-            printf("newNumSectors > NumDirect - 1.\n");
             int indirectSector = freeMap->Find();
             if (indirectSector == -1) {
                 return -1;
@@ -242,7 +241,6 @@ int FileHeader::Extend(int newFileSize) {
                 int remainFileSize = newFileSize - directSectors * SectorSize;
                 if (!indirect->Allocate(freeMap, remainFileSize))
                     return -1;
-//                indirect->Extend(remainFileSize);
             }
         } else {
             indirect = NULL;
@@ -251,7 +249,6 @@ int FileHeader::Extend(int newFileSize) {
     }
     numBytes = newFileSize;
     numSectors = newNumSectors;
-    printf("Next, write back freemap.\n");
     freeMap->WriteBack(bitmapFile);
     return 2;
 }
