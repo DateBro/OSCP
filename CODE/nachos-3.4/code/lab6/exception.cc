@@ -25,6 +25,25 @@
 #include "system.h"
 #include "syscall.h"
 
+AddrSpace *space;
+void StartProcess(int _which) {
+    currentThread->space = space;
+
+    space->InitRegisters();        // set the initial register values
+    space->RestoreState();        // load page table register
+
+    machine->Run();            // jump to the user progam
+    ASSERT(FALSE);            // machine->Run never returns;
+    // the address space exits
+    // by doing the syscall "exit"
+}
+
+void AdvancePC() {
+    machine > WriteRegister(PCReg, machine > ReadRegister(PCReg) + 4);
+    machine > WriteRegister(NextPCReg, machine > ReadRegister(NextPCReg)
+                                                 + 4);
+}
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -49,15 +68,38 @@
 //----------------------------------------------------------------------
 
 void
-ExceptionHandler(ExceptionType which)
-{
+ExceptionHandler(ExceptionType which) {
     int type = machine->ReadRegister(2);
 
     if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
+        DEBUG('a', "Shutdown, initiated by user program.\n");
+        interrupt->Halt();
+    } else if ((which == SyscallException) && (type == SC_Exec)) {
+        char filename[50];
+        int addr = machine->ReadRegister(4);
+        int i = 0;
+        do {
+            machine->ReadMem(addr + i, 1, (int *) &filename[i]);
+        } while (filename[i++] != '\0');
+
+        OpenFile *executable = fileSystem->Open(filename);
+
+        if (executable == NULL) {
+            printf("Unable to open file %s\n", filename);
+            return;
+        }
+        space = new AddrSpace(executable);
+        currentThread->space = space;
+
+        delete executable;            // close file
+
+        Thread *thread = new Thread("executing new thread");
+        thread->Fork(StartProcess, 0);
+        currentThread->Yield();
+
+        AdvancePC();
     } else {
-	printf("Unexpected user mode exception %d %d\n", which, type);
-	ASSERT(FALSE);
+        printf("Unexpected user mode exception %d %d\n", which, type);
+        ASSERT(FALSE);
     }
 }
