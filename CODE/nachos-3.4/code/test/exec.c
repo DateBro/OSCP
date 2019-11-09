@@ -6,7 +6,7 @@
 
 int
 main() {
-    SpacId pid;
+    int pid;
     pid = Exec("../test/halt.noff");
     Halt()
 }
