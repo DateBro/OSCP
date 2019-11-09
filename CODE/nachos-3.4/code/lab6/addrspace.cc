@@ -41,7 +41,8 @@ SwapHeader(NoffHeader *noffH) {
     noffH->uninitData.inFileAddr = WordToHost(noffH->uninitData.inFileAddr);
 }
 
-BitMap* AddrSpace::bitmap = new BitMap(NumPhysPages);
+BitMap *AddrSpace::bitmap = new BitMap(NumPhysPages);
+bool AddrSpace::spaceIdMap[128] = { 0 };
 
 //----------------------------------------------------------------------
 // AddrSpace::AddrSpace
@@ -61,6 +62,18 @@ BitMap* AddrSpace::bitmap = new BitMap(NumPhysPages);
 AddrSpace::AddrSpace(OpenFile *executable) {
     NoffHeader noffH;
     unsigned int i, size;
+
+//    Init spaceId for current space
+    bool flag = false;
+    for (int i = 0; i < 128; i++) {
+        if (!spaceIdMap[i]) {
+            spaceIdMap[i] = true;
+            flag = true;
+            spaceId = i;
+            break;
+        }
+    }
+    ASSERT(flag);
 
     executable->ReadAt((char *) &noffH, sizeof(noffH), 0);
     if ((noffH.noffMagic != NOFFMAGIC) &&
@@ -128,6 +141,11 @@ AddrSpace::AddrSpace(OpenFile *executable) {
 //----------------------------------------------------------------------
 
 AddrSpace::~AddrSpace() {
+    spaceIdMap[spaceId] = false;
+
+    for (int i = 0; i < numPages; ++i) {
+        bitmap->Clear(pageTable[i].physicalPage);
+    }
     delete[] pageTable;
 }
 

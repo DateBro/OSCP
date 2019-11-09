@@ -89,13 +89,14 @@ ExceptionHandler(ExceptionType which) {
             return;
         }
         space = new AddrSpace(executable);
-        currentThread->space = space;
 
         delete executable;            // close file
 
         Thread *thread = new Thread("executing new thread");
         thread->Fork(StartProcess, 0);
         currentThread->Yield();
+
+        machine->WriteRegister(2, space->getSpaceId());
 
         AdvancePC();
     } else {
