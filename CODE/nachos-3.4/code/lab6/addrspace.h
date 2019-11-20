@@ -16,6 +16,7 @@
 #include "copyright.h"
 #include "filesys.h"
 #include "bitmap.h"
+#include "machine.h"
 
 #define UserStackSize		1024 	// increase this as necessary!
 
@@ -34,7 +35,6 @@ class AddrSpace {
 
     void Print();
     int getSpaceId() { return spaceId; }
-    // modified done
 
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation

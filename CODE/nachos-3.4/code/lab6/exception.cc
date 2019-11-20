@@ -26,6 +26,9 @@
 #include "syscall.h"
 
 AddrSpace *space;
+
+void AdvancePC();
+
 void StartProcess(int _which) {
     currentThread->space = space;
 
@@ -36,12 +39,6 @@ void StartProcess(int _which) {
     ASSERT(FALSE);            // machine->Run never returns;
     // the address space exits
     // by doing the syscall "exit"
-}
-
-void AdvancePC() {
-    machine > WriteRegister(PCReg, machine > ReadRegister(PCReg) + 4);
-    machine > WriteRegister(NextPCReg, machine > ReadRegister(NextPCReg)
-                                                 + 4);
 }
 
 //----------------------------------------------------------------------
@@ -103,4 +100,10 @@ ExceptionHandler(ExceptionType which) {
         printf("Unexpected user mode exception %d %d\n", which, type);
         ASSERT(FALSE);
     }
+}
+
+void AdvancePC() {
+    machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+    machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
+    machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
 }
